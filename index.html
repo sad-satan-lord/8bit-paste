@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8-BIT PASTE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+    <style>
+        :root {
+            --bg: #000000;
+            --text: #00ff00;
+            --accent: #ff00ff;
+            --border: #ffffff;
+            --error: #ff0000;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 4px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
+            margin: 0;
+            color: var(--accent);
+            text-shadow: 2px 2px 0px var(--border);
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+            flex: 1;
+            width: 100%;
+        }
+
+        .pixel-box {
+            border: 4px solid var(--border);
+            padding: 20px;
+            background: #0a0a0a;
+            position: relative;
+            box-shadow: 
+                -4px -4px 0 -2px var(--bg),
+                4px 4px 0 -2px var(--bg),
+                -4px 4px 0 -2px var(--bg),
+                4px -4px 0 -2px var(--bg);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            margin-bottom: 10px;
+            display: block;
+            color: #00ffff;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            background: #000;
+            color: var(--text);
+            border: 2px solid var(--border);
+            padding: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            outline: none;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+
+        textarea {
+            height: 400px;
+            resize: vertical;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            background: #000;
+            color: var(--border);
+            border: 2px solid var(--border);
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: var(--border);
+            color: #000;
+        }
+
+        button.primary {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        button.primary:hover {
+            background: var(--accent);
+            color: #000;
+        }
+
+        #view-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #050505;
+            padding: 20px;
+            border: 2px solid #333;
+            min-height: 200px;
+            font-size: 20px;
+            overflow-x: auto;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--border);
+            color: #000;
+            padding: 15px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            display: none;
+            z-index: 1000;
+            border: 2px solid var(--accent);
+        }
+
+        .error {
+            color: var(--error);
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        .metadata {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #ffff00;
+        }
+        
+        /* Raw mode overrides */
+        body.raw-mode {
+            padding: 0;
+            margin: 0;
+            display: block;
+        }
+        
+        body.raw-mode header,
+        body.raw-mode .container {
+            display: none;
+        }
+        
+        #raw-output {
+            display: none;
+        }
+        
+        body.raw-mode #raw-output {
+            display: block;
+            white-space: pre;
+            font-family: monospace;
+            font-size: 14px;
+            color: #fff;
+            padding: 10px;
+            margin: 0;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1 id="logo" onclick="window.location.hash=''">8-BIT PASTE</h1>
+    </header>
+
+    <div class="container" id="create-view">
+        <div class="pixel-box">
+            <div class="input-group">
+                <span class="label">FILENAME / TITLE (OPTIONAL)</span>
+                <input type="text" id="paste-title" placeholder="untitled.txt" maxlength="100">
+            </div>
+            <div class="input-group">
+                <span class="label">CONTENT</span>
+                <textarea id="paste-content" placeholder="Enter your code or text here..."></textarea>
+                <div id="error-msg" class="error">CONTENT CANNOT BE EMPTY!</div>
+            </div>
+            <div class="buttons">
+                <button class="primary" id="btn-save">Save Paste</button>
+                <button id="btn-clear">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container hidden" id="read-view">
+        <div class="pixel-box">
+            <div class="metadata">
+                <span id="view-title">untitled.txt</span>
+                <span id="view-size">0 bytes</span>
+            </div>
+            <div class="input-group">
+                <pre id="view-content"></pre>
+            </div>
+            <div class="buttons">
+                <button class="primary" id="btn-new">New Paste</button>
+                <button id="btn-copy">Copy Link</button>
+                <button id="btn-copy-text">Copy Text</button>
+                <button id="btn-raw">Raw</button>
+            </div>
+        </div>
+    </div>
+
+    <pre id="raw-output"></pre>
+    <div id="toast" class="toast">COPIED!</div>
+
+    <script>
+        // DOM Elements
+        const createView = document.getElementById('create-view');
+        const readView = document.getElementById('read-view');
+        
+        const pasteTitle = document.getElementById('paste-title');
+        const pasteContent = document.getElementById('paste-content');
+        
+        const viewTitle = document.getElementById('view-title');
+        const viewSize = document.getElementById('view-size');
+        const viewContent = document.getElementById('view-content');
+        const rawOutput = document.getElementById('raw-output');
+        
+        const btnSave = document.getElementById('btn-save');
+        const btnClear = document.getElementById('btn-clear');
+        const btnNew = document.getElementById('btn-new');
+        const btnCopy = document.getElementById('btn-copy');
+        const btnCopyText = document.getElementById('btn-copy-text');
+        const btnRaw = document.getElementById('btn-raw');
+        
+        const errorMsg = document.getElementById('error-msg');
+        const toast = document.getElementById('toast');
+
+        // Functions
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        function getEncodedData(title, content) {
+            const data = JSON.stringify({ t: title, c: content });
+            return LZString.compressToEncodedURIComponent(data);
+        }
+
+        function decodeData(encoded) {
+            try {
+                const decompressed = LZString.decompressFromEncodedURIComponent(encoded);
+                if (!decompressed) return null;
+                return JSON.parse(decompressed);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function savePaste() {
+            const content = pasteContent.value.trim();
+            if (!content) {
+                errorMsg.style.display = 'block';
+                return;
+            }
+            errorMsg.style.display = 'none';
+            
+            const title = pasteTitle.value.trim() || 'untitled.txt';
+            const encoded = getEncodedData(title, content);
+            
+            // Navigate to view
+            window.location.hash = 'view/' + encoded;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function renderApp() {
+            const hash = window.location.hash.substring(1);
+            document.body.classList.remove('raw-mode');
+            
+            if (hash.startsWith('view/')) {
+                const encoded = hash.substring(5);
+                const data = decodeData(encoded);
+                
+                if (data) {
+                    createView.classList.add('hidden');
+                    readView.classList.remove('hidden');
+                    
+                    viewTitle.textContent = data.t;
+                    viewContent.textContent = data.c;
+                    
+                    const bytes = new Blob([data.c]).size;
+                    viewSize.textContent = formatBytes(bytes);
+                } else {
+                    window.location.hash = ''; // Invalid data, go home
+                }
+            } else if (hash.startsWith('raw/')) {
+                const encoded = hash.substring(4);
+                const data = decodeData(encoded);
+                
+                if (data) {
+                    document.body.classList.add('raw-mode');
+                    rawOutput.textContent = data.c;
+                } else {
+                    window.location.hash = ''; // Invalid data, go home
+                }
+            } else {
+                // Home view
+                createView.classList.remove('hidden');
+                readView.classList.add('hidden');
+                pasteContent.value = '';
+                pasteTitle.value = '';
+                errorMsg.style.display = 'none';
+            }
+        }
+
+        // Event Listeners
+        btnSave.addEventListener('click', savePaste);
+        
+        btnClear.addEventListener('click', () => {
+            pasteContent.value = '';
+            pasteTitle.value = '';
+            errorMsg.style.display = 'none';
+        });
+
+        btnNew.addEventListener('click', () => {
+            window.location.hash = '';
+        });
+
+        btnCopy.addEventListener('click', () => {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                showToast('LINK COPIED!');
+            });
+        });
+        
+        btnCopyText.addEventListener('click', () => {
+            const content = viewContent.textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                showToast('TEXT COPIED!');
+            });
+        });
+
+        btnRaw.addEventListener('click', () => {
+            const hash = window.location.hash.substring(1);
+            if (hash.startsWith('view/')) {
+                const encoded = hash.substring(5);
+                window.open('?#raw/' + encoded, '_blank');
+            }
+        });
+
+        // Allow Tab in textarea
+        pasteContent.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        // Initial render and hash change listener
+        window.addEventListener('hashchange', renderApp);
+        renderApp();
+        
+    </script>
+</body>
+</html>
