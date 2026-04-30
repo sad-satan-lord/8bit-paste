@@ -9,10 +9,11 @@ No server.
 No database.
 No tracking.
 **Just a link.**
-TODOS :
-PASTEL THEME
-LocalDB
-More compressed URL 
+
+## TODOS :
+*PASTEL THEME*
+*LocalDB*
+*More compressed URL*
 
 ---
 
