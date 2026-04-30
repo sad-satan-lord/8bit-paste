@@ -13,10 +13,58 @@
             --accent: #ff00ff;
             --border: #ffffff;
             --error: #ff0000;
+            --box-bg: #0a0a0a;
+            --view-bg: #050505;
+            --history-border: #333;
+            --meta-text: #ffff00;
         }
 
-        * {
+        .light-theme {
+            --bg: #f5deb3; /* wheat */
+            --text: #000000;
+            --accent: #d2691e; /* chocolate */
+            --border: #000000;
+            --error: #ff0000;
+            --box-bg: #eaddb6;
+            --view-bg: #eaddb6;
+            --history-border: #000000;
+            --meta-text: #000000;
+        }
+
+        * { {
+
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Custom Scrollbar for 8-bit look */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+            background: var(--bg);
+            border-left: 2px solid var(--border);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border: 2px solid var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: var(--bg);
+        }
+
+        /* Enforce native look overrides */
+        input[type="text"], textarea, button {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            border-radius: 0; /* Important for blocky look in iOS/Safari */
         }
 
         body {
@@ -58,7 +106,7 @@
         .pixel-box {
             border: 4px solid var(--border);
             padding: 20px;
-            background: #0a0a0a;
+            background: var(--box-bg);
             position: relative;
             box-shadow: 
                 -4px -4px 0 -2px var(--bg),
@@ -76,7 +124,7 @@
             font-size: 10px;
             margin-bottom: 10px;
             display: block;
-            color: #00ffff;
+            color: var(--accent);
         }
 
         input[type="text"], textarea {
@@ -135,9 +183,9 @@
         #view-content {
             white-space: pre-wrap;
             word-wrap: break-word;
-            background: #050505;
+            background: var(--view-bg);
             padding: 20px;
-            border: 2px solid #333;
+            border: 2px solid var(--history-border);
             min-height: 200px;
             font-size: 20px;
             overflow-x: auto;
@@ -165,6 +213,30 @@
             display: none;
         }
 
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border: 2px solid var(--history-border);
+            margin-bottom: 5px;
+            background: var(--view-bg);
+            cursor: pointer;
+        }
+        .history-item:hover {
+            border-color: var(--text);
+        }
+        .history-title {
+            color: var(--border);
+        }
+        .history-date {
+            color: var(--border);
+            font-size: 16px;
+        }
+        .empty-history {
+            color: #555;
+            font-style: italic;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -175,7 +247,7 @@
             margin-bottom: 10px;
             font-family: 'Press Start 2P', cursive;
             font-size: 10px;
-            color: #ffff00;
+            color: var(--meta-text);
         }
         
         /* Raw mode overrides */
@@ -199,7 +271,7 @@
             white-space: pre;
             font-family: monospace;
             font-size: 14px;
-            color: #fff;
+            color: var(--border);
             padding: 10px;
             margin: 0;
         }
@@ -209,9 +281,21 @@
 <body>
     <header>
         <h1 id="logo" onclick="window.location.hash=''">8-BIT PASTE</h1>
+        <div id="auth-controls" style="position: absolute; right: 20px; top: 20px; display: flex; gap: 10px; align-items: center;">
+            <span id="user-display" style="font-size: 12px; display: none;"></span>
+            <button id="btn-login-route" style="padding: 5px 10px;">LOGIN</button>
+            <button id="btn-logout" style="padding: 5px 10px; display: none;">LOGOUT</button>
+            <button id="btn-theme" style="padding: 5px 10px;">THEME</button>
+        </div>
     </header>
 
     <div class="container" id="create-view">
+        <div class="pixel-box" style="margin-bottom: 20px;">
+            <div class="input-group">
+                <span class="label">MY PASTES (LOCAL HISTORY)</span>
+                <div id="history-list"></div>
+            </div>
+        </div>
         <div class="pixel-box">
             <div class="input-group">
                 <span class="label">FILENAME / TITLE (OPTIONAL)</span>
@@ -229,6 +313,25 @@
         </div>
     </div>
 
+<div class="container hidden" id="auth-view">
+        <div class="pixel-box" style="max-width: 500px; margin: 0 auto;">
+            <h2 id="auth-title" style="font-family: 'Press Start 2P', cursive; font-size: 16px; margin-bottom: 20px; text-align: center;">LOGIN</h2>
+            <div class="input-group">
+                <span class="label">USERNAME</span>
+                <input type="text" id="auth-username" placeholder="player1">
+            </div>
+            <div class="input-group">
+                <span class="label">PASSWORD</span>
+                <input type="password" id="auth-password" style="width: 100%; background: #000; color: var(--text); border: 2px solid var(--border); padding: 10px; font-family: 'VT323', monospace; font-size: 20px; outline: none;">
+            </div>
+            <div id="auth-error-msg" class="error"></div>
+            <div class="buttons" style="justify-content: center; margin-top: 20px;">
+                <button class="primary" id="btn-auth-submit">Login</button>
+                <button id="btn-auth-switch">Need to Register?</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container hidden" id="read-view">
         <div class="pixel-box">
             <div class="metadata">
@@ -240,6 +343,7 @@
             </div>
             <div class="buttons">
                 <button class="primary" id="btn-new">New Paste</button>
+                <button id="btn-edit">Edit Paste</button>
                 <button id="btn-copy">Copy Link</button>
                 <button id="btn-copy-text">Copy Text</button>
                 <button id="btn-raw">Raw</button>
@@ -251,6 +355,21 @@
     <div id="toast" class="toast">COPIED!</div>
 
     <script>
+        const btnTheme = document.getElementById('btn-theme');
+        
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('8bit_theme', isLight ? 'light' : 'dark');
+        }
+
+        btnTheme.addEventListener('click', toggleTheme);
+        
+        // Load saved theme
+        if (localStorage.getItem('8bit_theme') === 'light') {
+            document.body.classList.add('light-theme');
+        }
+
         // DOM Elements
         const createView = document.getElementById('create-view');
         const readView = document.getElementById('read-view');
@@ -266,6 +385,7 @@
         const btnSave = document.getElementById('btn-save');
         const btnClear = document.getElementById('btn-clear');
         const btnNew = document.getElementById('btn-new');
+        const btnEdit = document.getElementById('btn-edit');
         const btnCopy = document.getElementById('btn-copy');
         const btnCopyText = document.getElementById('btn-copy-text');
         const btnRaw = document.getElementById('btn-raw');
@@ -273,7 +393,135 @@
         const errorMsg = document.getElementById('error-msg');
         const toast = document.getElementById('toast');
 
-        // Functions
+        const historyList = document.getElementById('history-list');
+// Auth UI Elements
+        const authView = document.getElementById('auth-view');
+        const authTitle = document.getElementById('auth-title');
+        const authUsername = document.getElementById('auth-username');
+        const authPassword = document.getElementById('auth-password');
+        const btnAuthSubmit = document.getElementById('btn-auth-submit');
+        const btnAuthSwitch = document.getElementById('btn-auth-switch');
+        const authErrorMsg = document.getElementById('auth-error-msg');
+        
+        const btnLoginRoute = document.getElementById('btn-login-route');
+        const btnLogout = document.getElementById('btn-logout');
+        const userDisplay = document.getElementById('user-display');
+        
+        let isLoginMode = true;
+        
+        function updateAuthUI() {
+            const token = localStorage.getItem('8bit_token');
+            const username = localStorage.getItem('8bit_username');
+            
+            if (token && username) {
+                userDisplay.textContent = `[ ${username} ]`;
+                userDisplay.style.display = 'block';
+                btnLogout.style.display = 'block';
+                btnLoginRoute.style.display = 'none';
+            } else {
+                userDisplay.style.display = 'none';
+                btnLogout.style.display = 'none';
+                btnLoginRoute.style.display = 'block';
+            }
+        }
+        
+        btnLoginRoute.addEventListener('click', () => { window.location.hash = 'login'; });
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('8bit_token');
+            localStorage.removeItem('8bit_username');
+            updateAuthUI();
+            showToast('LOGGED OUT');
+        });
+        
+        btnAuthSwitch.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            authTitle.textContent = isLoginMode ? 'LOGIN' : 'REGISTER';
+            btnAuthSubmit.textContent = isLoginMode ? 'Login' : 'Register';
+            btnAuthSwitch.textContent = isLoginMode ? 'Need to Register?' : 'Already have an account?';
+            authErrorMsg.style.display = 'none';
+        });
+        
+        btnAuthSubmit.addEventListener('click', async () => {
+            const username = authUsername.value.trim();
+            const password = authPassword.value.trim();
+            
+            if (!username || !password) {
+                authErrorMsg.textContent = 'FILL ALL FIELDS!';
+                authErrorMsg.style.display = 'block';
+                return;
+            }
+            
+            const endpoint = isLoginMode ? '/api/login' : '/api/register';
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (isLoginMode) {
+                        localStorage.setItem('8bit_token', data.token);
+                        localStorage.setItem('8bit_username', data.username);
+                        updateAuthUI();
+                        window.location.hash = '';
+                        showToast('LOGIN SUCCESSFUL!');
+                    } else {
+                        showToast('REGISTERED! NOW LOGIN.');
+                        btnAuthSwitch.click(); // switch to login mode
+                    }
+                } else {
+                    authErrorMsg.textContent = data.message || 'ERROR OCCURRED';
+                    authErrorMsg.style.display = 'block';
+                }
+            } catch (e) {
+                authErrorMsg.textContent = 'SERVER ERROR';
+                authErrorMsg.style.display = 'block';
+            }
+        });
+        
+        // Ensure UI updates on load
+        updateAuthUI();
+
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('8bit_pastes') || '[]');
+            historyList.innerHTML = '';
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="empty-history">NO PASTES YET.</div>';
+                return;
+            }
+            
+            history.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <span class="history-title">${item.title}</span>
+                    <span class="history-date">${item.date}</span>
+                `;
+                div.onclick = () => {
+                    window.location.hash = item.url;
+                };
+                historyList.appendChild(div);
+            });
+        }
+
+        function addToHistory(title, url) {
+            const history = JSON.parse(localStorage.getItem('8bit_pastes') || '[]');
+            const date = new Date().toLocaleString();
+            history.unshift({ title, url, date });
+            
+            // Keep last 10 pastes
+            if (history.length > 10) {
+                history.pop();
+            }
+            
+            localStorage.setItem('8bit_pastes', JSON.stringify(history));
+            loadHistory();
+        }
+
         function showToast(msg) {
             toast.textContent = msg;
             toast.style.display = 'block';
@@ -297,7 +545,7 @@
             }
         }
 
-        function savePaste() {
+        async function savePaste() {
             const content = pasteContent.value.trim();
             if (!content) {
                 errorMsg.style.display = 'block';
@@ -306,10 +554,37 @@
             errorMsg.style.display = 'none';
             
             const title = pasteTitle.value.trim() || 'untitled.txt';
-            const encoded = getEncodedData(title, content);
             
-            // Navigate to view
-            window.location.hash = 'view/' + encoded;
+            const isMedia = title.endsWith('.m3u8') || title.endsWith('.mpd');
+            
+            if (isMedia) {
+                // Save to server
+                try {
+                    const response = await fetch('/api/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ title: title, content: content })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        addToHistory(title, data.url);
+                        window.location.hash = data.url;
+
+                    } else {
+                        showToast('ERROR SAVING TO SERVER!');
+                    }
+                } catch (e) {
+                    showToast('SERVER ERROR!');
+                }} else {
+                // Serverless save
+                const encoded = getEncodedData(title, content);
+                const url = 'view/' + encoded;
+                addToHistory(title, url);
+                window.location.hash = url;
+            }
         }
 
         function formatBytes(bytes) {
@@ -320,7 +595,7 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        function renderApp() {
+        async function renderApp() {
             const hash = window.location.hash.substring(1);
             document.body.classList.remove('raw-mode');
             
@@ -329,6 +604,7 @@
                 const data = decodeData(encoded);
                 
                 if (data) {
+                    authView.classList.add('hidden');
                     createView.classList.add('hidden');
                     readView.classList.remove('hidden');
                     
@@ -340,6 +616,26 @@
                 } else {
                     window.location.hash = ''; // Invalid data, go home
                 }
+            } else if (hash.startsWith('server/')) {
+                const id = hash.substring(7);
+                try {
+                    const response = await fetch('/api/paste/' + id);
+                    if (response.ok) {
+                        const data = await response.json();
+                        createView.classList.add('hidden');
+                        readView.classList.remove('hidden');
+                        
+                        viewTitle.textContent = data.title;
+                        viewContent.textContent = data.content;
+                        
+                        const bytes = new Blob([data.content]).size;
+                        viewSize.textContent = formatBytes(bytes);
+                    } else {
+                        window.location.hash = '';
+                    }
+                } catch (e) {
+                    window.location.hash = '';
+                }
             } else if (hash.startsWith('raw/')) {
                 const encoded = hash.substring(4);
                 const data = decodeData(encoded);
@@ -350,8 +646,15 @@
                 } else {
                     window.location.hash = ''; // Invalid data, go home
                 }
+            } else if (hash === 'login' || hash === 'register') {
+                createView.classList.add('hidden');
+                readView.classList.add('hidden');
+                authView.classList.remove('hidden');
+                if(hash === 'register' && isLoginMode) btnAuthSwitch.click();
+                if(hash === 'login' && !isLoginMode) btnAuthSwitch.click();
             } else {
                 // Home view
+                authView.classList.add('hidden');
                 createView.classList.remove('hidden');
                 readView.classList.add('hidden');
                 pasteContent.value = '';
@@ -373,6 +676,20 @@
             window.location.hash = '';
         });
 
+btnEdit.addEventListener('click', () => {
+            const currentTitle = viewTitle.textContent;
+            const currentContent = viewContent.textContent;
+            
+            window.location.hash = ''; // Go back to create view
+            
+            // Allow time for view to transition
+            setTimeout(() => {
+                pasteTitle.value = currentTitle;
+                pasteContent.value = currentContent;
+                pasteContent.focus();
+            }, 100);
+        });
+
         btnCopy.addEventListener('click', () => {
             navigator.clipboard.writeText(window.location.href).then(() => {
                 showToast('LINK COPIED!');
@@ -391,6 +708,9 @@
             if (hash.startsWith('view/')) {
                 const encoded = hash.substring(5);
                 window.open('?#raw/' + encoded, '_blank');
+            } else if (hash.startsWith('server/')) {
+                const id = hash.substring(7);
+                window.open('/raw/' + id, '_blank');
             }
         });
 
@@ -408,6 +728,7 @@
         // Initial render and hash change listener
         window.addEventListener('hashchange', renderApp);
         renderApp();
+        loadHistory();
         
     </script>
 </body>
