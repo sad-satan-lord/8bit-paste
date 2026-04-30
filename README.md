@@ -1,4 +1,4 @@
-# working link - https://8bit-paste.netlify.app/
+# Working Demo - https://8bit-paste.netlify.app/
 # 🎮 8BIT-PASTE
 
 > **PASTE. SHARE. ENCODE. THAT’S IT.**
@@ -9,7 +9,10 @@ No server.
 No database.
 No tracking.
 **Just a link.**
-**screenshots**
+TODOS :
+PASTEL THEME
+LocalDB
+More compressed URL 
 
 ---
 
